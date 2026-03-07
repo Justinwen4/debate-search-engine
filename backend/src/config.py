@@ -8,8 +8,9 @@ class Settings(BaseSettings):
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimensions: int = 384
 
-    crawler_concurrency: int = 5
+    crawler_concurrency: int = 10
     crawler_delay: float = 1.0
+    crawler_max_depth: int = 3
     crawler_user_agent: str = "DebateSearchBot/1.0"
 
     chunk_max_words: int = 512

@@ -24,24 +24,24 @@ async def process_source(source: Source, session: AsyncSession) -> int:
     Returns the number of chunks created, or 0 on failure.
     """
     try:
-        doc = extract_from_html(source.raw_html, source.url)
+        if source.raw_html:
+            doc = extract_from_html(source.raw_html, source.url)
+            source.title = doc.title
+            source.author = doc.author
+            source.published_date = doc.published_date
+            source.extracted_text = doc.text
 
-        source.title = doc.title
-        source.author = doc.author
-        source.published_date = doc.published_date
-        source.extracted_text = doc.text
-
-        if not doc.text or len(doc.text.split()) < 30:
+        if not source.extracted_text or len(source.extracted_text.split()) < 30:
             logger.warning("Skipping %s: too little text extracted", source.url)
             source.status = SourceStatus.FAILED
             await session.commit()
             return 0
 
         text_chunks = chunk_document(
-            doc.text,
+            source.extracted_text,
             max_words=settings.chunk_max_words,
             overlap_words=settings.chunk_overlap_words,
-            source_title=doc.title,
+            source_title=source.title or "Untitled",
         )
 
         if not text_chunks:

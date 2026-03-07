@@ -1,11 +1,13 @@
 """
-HTML text extraction. Pulls title, author, date, and body text
-from an HTML document, targeting content-bearing elements and
-discarding boilerplate (nav, footer, ads, etc.).
+Content extraction for HTML and PDF documents.
+
+HTML: pulls title, author, date, and body text, discarding boilerplate.
+PDF:  extracts full text via pdfplumber.
 """
 
 from __future__ import annotations
 
+import io
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
@@ -97,3 +99,34 @@ def _extract_body(soup: BeautifulSoup) -> str:
             paragraphs.append(text)
 
     return "\n\n".join(paragraphs)
+
+
+# ---------------------------------------------------------------------------
+# PDF extraction
+# ---------------------------------------------------------------------------
+
+def extract_from_pdf(pdf_bytes: bytes, url: str) -> ExtractedDocument:
+    """
+    Extract text from a PDF file.  Runs synchronously — call via
+    ``asyncio.to_thread`` when used inside the async crawler.
+    """
+    import pdfplumber
+
+    pages: list[str] = []
+    title: str = "Untitled"
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        if pdf.metadata:
+            title = pdf.metadata.get("Title") or title
+
+        for page in pdf.pages:
+            text = page.extract_text()
+            if text:
+                pages.append(text.strip())
+
+    return ExtractedDocument(
+        title=title,
+        author=None,
+        published_date=None,
+        text="\n\n".join(pages),
+    )

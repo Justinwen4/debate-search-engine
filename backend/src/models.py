@@ -21,6 +21,14 @@ class SourceStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class SourceType(str, enum.Enum):
+    ACADEMIC = "academic"
+    NEWS = "news"
+    POLICY = "policy"
+    THINK_TANK = "think-tank"
+    GENERAL = "general"
+
+
 class Source(Base):
     __tablename__ = "sources"
 
@@ -39,6 +47,9 @@ class Source(Base):
     extracted_text: Mapped[str | None] = mapped_column(Text)
     status: Mapped[SourceStatus] = mapped_column(
         Enum(SourceStatus), default=SourceStatus.PENDING
+    )
+    source_type: Mapped[SourceType | None] = mapped_column(
+        Enum(SourceType), nullable=True, index=True
     )
 
     chunks: Mapped[list["Chunk"]] = relationship(
